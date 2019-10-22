@@ -29,7 +29,6 @@ import merge from 'lodash/merge';
 import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import Close from '@material-ui/icons/Close';
-import { Hidden } from '@material-ui/core';
 
 interface MuiInputTextStatus {
   showAdornment: boolean;
@@ -59,9 +58,9 @@ export class MuiInputText extends React.PureComponent<
       muiInputProps
     } = this.props;
     const maxLength = schema.maxLength;
-    const mergedConfig = merge({}, config, uischema.options);
+    const appliedUiSchemaOptions = merge({}, config, uischema.options);
     let inputProps: any;
-    if (mergedConfig.restrict) {
+    if (appliedUiSchemaOptions.restrict) {
       inputProps = { maxLength: maxLength };
     } else {
       inputProps = {};
@@ -69,7 +68,7 @@ export class MuiInputText extends React.PureComponent<
 
     inputProps = merge(inputProps, muiInputProps);
 
-    if (mergedConfig.trim && maxLength !== undefined) {
+    if (appliedUiSchemaOptions.trim && maxLength !== undefined) {
       inputProps.size = maxLength;
     }
     const onChange = (ev: any) => handleChange(path, ev.target.value);
@@ -77,32 +76,35 @@ export class MuiInputText extends React.PureComponent<
     return (
       <Input
         type={
-          uischema.options && uischema.options.format === 'password'
-            ? 'password'
-            : 'text'
+          appliedUiSchemaOptions.format === 'password' ? 'password' : 'text'
         }
         value={data || ''}
         onChange={onChange}
         className={className}
         id={id}
         disabled={!enabled}
-        autoFocus={uischema.options && uischema.options.focus}
-        multiline={uischema.options && uischema.options.multi}
-        fullWidth={!mergedConfig.trim || maxLength === undefined}
+        autoFocus={appliedUiSchemaOptions.focus}
+        multiline={appliedUiSchemaOptions.multi}
+        fullWidth={!appliedUiSchemaOptions.trim || maxLength === undefined}
         inputProps={inputProps}
         error={!isValid}
         onPointerEnter={() => this.setState({ showAdornment: true })}
         onPointerLeave={() => this.setState({ showAdornment: false })}
         endAdornment={
-          <InputAdornment position='end'>
-            <Hidden xsUp={!this.state.showAdornment}>
-              <IconButton
-                aria-label='Clear input field'
-                onClick={() => handleChange(path, undefined)}
-              >
-                <Close />
-              </IconButton>
-            </Hidden>
+          // Use visibility instead of 'Hidden' so the layout doesn't change when the icon is shown
+          <InputAdornment
+            position='end'
+            style={{
+              visibility:
+                !this.state.showAdornment || !enabled ? 'hidden' : 'visible'
+            }}
+          >
+            <IconButton
+              aria-label='Clear input field'
+              onClick={() => handleChange(path, undefined)}
+            >
+              <Close />
+            </IconButton>
           </InputAdornment>
         }
       />

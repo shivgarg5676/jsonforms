@@ -25,9 +25,8 @@
 import './MatchMediaMock';
 import React from 'react';
 import Enzyme, { mount, ReactWrapper } from 'enzyme';
-import { MaterialTextControl } from '../../src/controls/MaterialTextControl';
-import { MaterialInputControl } from '../../src/controls/MaterialInputControl';
-import { MuiInputText } from '../../src/mui-controls/MuiInputText';
+import { MaterialNativeControl } from '../../src/controls/MaterialNativeControl';
+import TextField from '@material-ui/core/TextField';
 import Adapter from 'enzyme-adapter-react-16';
 import { ControlElement, ControlProps } from '@jsonforms/core';
 
@@ -37,7 +36,8 @@ const schema = {
   type: 'object',
   properties: {
     foo: {
-      type: 'string'
+      type: 'string',
+      format: 'time'
     }
   }
 };
@@ -46,14 +46,14 @@ const uischema: ControlElement = {
   scope: '#/properties/foo'
 };
 
-const createMaterialTextControl = (props: ControlProps) => {
-  return <MaterialTextControl {...props} />;
+const createMaterialNativeControl = (props: ControlProps) => {
+  return <MaterialNativeControl {...props} />;
 };
 
 const defaultControlProps = (): ControlProps => {
   return {
-    handleChange: () => {},
-    enabled: true,
+    handleChange: () => { },
+    enabled: false,
     visible: true,
     path: 'path',
     rootSchema: schema,
@@ -66,30 +66,16 @@ const defaultControlProps = (): ControlProps => {
   };
 };
 
-describe('Material text control', () => {
+describe('Material native control', () => {
   let wrapper: ReactWrapper;
 
   afterEach(() => {
     wrapper.unmount();
   });
 
-  it('render', () => {
+  it('is disabled', () => {
     const props = defaultControlProps();
-    wrapper = mount(createMaterialTextControl(props));
-    expect(wrapper.find(MaterialInputControl).props()).toEqual({
-      ...props,
-      input: MuiInputText
-    });
-
-    expect(wrapper.find('input').props().id).toEqual(`${props.id}-input`);
-  });
-
-  it('allows adding of mui input props', () => {
-    const props = {
-      ...defaultControlProps(),
-      muiInputProps: { spellCheck: false }
-    };
-    wrapper = mount(createMaterialTextControl(props));
-    expect(wrapper.find('input').props().spellCheck).toEqual(false);
+    wrapper = mount(createMaterialNativeControl(props));
+    expect(wrapper.find(TextField).props().disabled).toEqual(true);
   });
 });

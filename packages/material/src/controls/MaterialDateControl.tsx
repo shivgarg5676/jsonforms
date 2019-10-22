@@ -23,17 +23,18 @@
   THE SOFTWARE.
 */
 import startsWith from 'lodash/startsWith';
+import merge from 'lodash/merge';
 import React from 'react';
 import {
-    computeLabel,
-    ControlState,
-    DispatchPropsOfControl,
-    isDateControl,
-    isDescriptionHidden,
-    isPlainLabel, 
-    RankedTester,
-    rankWith,
-    StatePropsOfControl
+  computeLabel,
+  ControlState,
+  DispatchPropsOfControl,
+  isDateControl,
+  isDescriptionHidden,
+  isPlainLabel,
+  RankedTester,
+  rankWith,
+  StatePropsOfControl
 } from '@jsonforms/core';
 import { Control, withJsonFormsControlProps } from '@jsonforms/react';
 import { Hidden } from '@material-ui/core';
@@ -42,104 +43,120 @@ import KeyboardArrowRightIcon from '@material-ui/icons/KeyboardArrowRight';
 import EventIcon from '@material-ui/icons/Event';
 import moment from 'moment';
 import { Moment } from 'moment';
-import { DatePicker, MuiPickersUtilsProvider } from 'material-ui-pickers';
+import {
+  KeyboardDatePicker,
+  MuiPickersUtilsProvider
+} from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
-import merge from 'lodash/merge';
 
 export interface DateControl {
-    momentLocale?: Moment;
+  momentLocale?: Moment;
 }
 
-export class MaterialDateControl extends Control<StatePropsOfDateControl & DispatchPropsOfControl & DateControl, ControlState> {
-    render() {
-        const {
-            description,
-            id,
-            errors,
-            label,
-            uischema,
-            visible,
-            enabled,
-            required,
-            path,
-            handleChange,
-            data,
-            momentLocale,
-            config
-        } = this.props;
-        const defaultLabel = label as string;
-        const cancelLabel = '%cancel';
-        const clearLabel = '%clear';
-        const isValid = errors.length === 0;
-        const trim = uischema.options && uischema.options.trim;
-        const mergedConfig = merge({}, config, uischema.options);
-        const showDescription = !isDescriptionHidden(visible, description, this.state.isFocused, mergedConfig.showUnfocusedDescription);
-        const inputProps = {};
-        const localeDateTimeFormat =
-            momentLocale ? `${momentLocale.localeData().longDateFormat('L')}`
-                : 'YYYY-MM-DD';
+// Workaround typing problems in @material-ui/pickers@3.2.3
+const AnyPropsKeyboardDatePicker: React.FunctionComponent<
+  any
+> = KeyboardDatePicker;
 
-        let labelText;
-        let labelCancel;
-        let labelClear;
+export class MaterialDateControl extends Control<
+  StatePropsOfDateControl & DispatchPropsOfControl & DateControl,
+  ControlState
+> {
+  render() {
+    const {
+      description,
+      id,
+      errors,
+      label,
+      uischema,
+      visible,
+      enabled,
+      required,
+      path,
+      handleChange,
+      data,
+      momentLocale,
+      config
+    } = this.props;
+    const defaultLabel = label as string;
+    const cancelLabel = '%cancel';
+    const clearLabel = '%clear';
+    const isValid = errors.length === 0;
+    const appliedUiSchemaOptions = merge({}, config, uischema.options);
+    const showDescription = !isDescriptionHidden(
+      visible,
+      description,
+      this.state.isFocused,
+      appliedUiSchemaOptions.showUnfocusedDescription
+    );
+    const inputProps = {};
+    const localeDateTimeFormat = momentLocale
+      ? `${momentLocale.localeData().longDateFormat('L')}`
+      : 'YYYY-MM-DD';
 
-        if (isPlainLabel(label)) {
-            labelText = label;
-            labelCancel = 'Cancel';
-            labelClear = 'Clear';
-        } else {
-            labelText = defaultLabel;
-            labelCancel = startsWith(cancelLabel, '%') ? 'Cancel' : cancelLabel;
-            labelClear = startsWith(clearLabel, '%') ? 'Clear' : clearLabel;
-        }
+    let labelText;
+    let labelCancel;
+    let labelClear;
 
-        const getValue = (event: React.FormEvent<HTMLInputElement>) =>
-            (event.target as HTMLInputElement).value;
-
-        return (
-            <Hidden xsUp={!visible}>
-                <MuiPickersUtilsProvider utils={MomentUtils}>
-                    <DatePicker
-                        keyboard
-                        id={id + '-input'}
-                        label={computeLabel(labelText, required, mergedConfig.hideRequiredAsterisk)}
-                        error={!isValid}
-                        fullWidth={!trim}
-                        helperText={!isValid ? errors : showDescription ? description : ' '}
-                        InputLabelProps={{ shrink: true }}
-                        value={data || null}
-                        onChange={datetime =>
-                            handleChange(path, datetime ? moment(datetime).format('YYYY-MM-DD') : '')
-                        }
-                        onInputChange={ev =>
-                            handleChange(path, getValue(ev) ?
-                                moment(getValue(ev)).format('YYYY-MM-DD') : '')}
-                        format={localeDateTimeFormat}
-                        clearable={true}
-                        disabled={!enabled}
-                        autoFocus={uischema.options && uischema.options.focus}
-                        onClear={() => handleChange(path, '')}
-                        onFocus={this.onFocus}
-                        onBlur={this.onBlur}
-                        cancelLabel={labelCancel}
-                        clearLabel={labelClear}
-                        leftArrowIcon={<KeyboardArrowLeftIcon />}
-                        rightArrowIcon={<KeyboardArrowRightIcon />}
-                        keyboardIcon={<EventIcon />}
-                        InputProps={inputProps}
-                    />
-                </MuiPickersUtilsProvider>
-            </Hidden>
-        );
+    if (isPlainLabel(label)) {
+      labelText = label;
+      labelCancel = 'Cancel';
+      labelClear = 'Clear';
+    } else {
+      labelText = defaultLabel;
+      labelCancel = startsWith(cancelLabel, '%') ? 'Cancel' : cancelLabel;
+      labelClear = startsWith(clearLabel, '%') ? 'Clear' : clearLabel;
     }
+
+    return (
+      <Hidden xsUp={!visible}>
+        <MuiPickersUtilsProvider utils={MomentUtils}>
+          <AnyPropsKeyboardDatePicker
+            id={id + '-input'}
+            label={computeLabel(
+              labelText,
+              required,
+              appliedUiSchemaOptions.hideRequiredAsterisk
+            )}
+            error={!isValid}
+            fullWidth={!appliedUiSchemaOptions.trim}
+            helperText={!isValid ? errors : showDescription ? description : ' '}
+            InputLabelProps={{ shrink: true }}
+            value={data || null}
+            onChange={(datetime: any) =>
+              handleChange(
+                path,
+                datetime ? moment(datetime).format('YYYY-MM-DD') : ''
+              )
+            }
+            format={localeDateTimeFormat}
+            clearable={true}
+            disabled={!enabled}
+            autoFocus={appliedUiSchemaOptions.focus}
+            onFocus={this.onFocus}
+            onBlur={this.onBlur}
+            cancelLabel={labelCancel}
+            clearLabel={labelClear}
+            leftArrowIcon={<KeyboardArrowLeftIcon />}
+            rightArrowIcon={<KeyboardArrowRightIcon />}
+            keyboardIcon={<EventIcon />}
+            InputProps={inputProps}
+          />
+        </MuiPickersUtilsProvider>
+      </Hidden>
+    );
+  }
 }
 
 export interface StatePropsOfDateControl extends StatePropsOfControl {
-    defaultLabel: string;
-    cancelLabel: string;
-    clearLabel: string;
+  defaultLabel: string;
+  cancelLabel: string;
+  clearLabel: string;
 }
 
-export const materialDateControlTester: RankedTester = rankWith(4, isDateControl);
+export const materialDateControlTester: RankedTester = rankWith(
+  4,
+  isDateControl
+);
 
 export default withJsonFormsControlProps(MaterialDateControl);

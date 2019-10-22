@@ -31,7 +31,7 @@ import {
   isDateTimeControl,
   isPlainLabel,
   RankedTester,
-  rankWith,
+  rankWith
 } from '@jsonforms/core';
 import { Control, withJsonFormsControlProps } from '@jsonforms/react';
 import moment from 'moment';
@@ -41,10 +41,21 @@ import KeyboardArrowRightIcon from '@material-ui/icons/KeyboardArrowRight';
 import DateRangeIcon from '@material-ui/icons/DateRange';
 import EventIcon from '@material-ui/icons/Event';
 import AccessTimeIcon from '@material-ui/icons/AccessTime';
-import { DateTimePicker, MuiPickersUtilsProvider } from 'material-ui-pickers';
+import {
+  KeyboardDateTimePicker,
+  MuiPickersUtilsProvider
+} from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 
-export class MaterialDateTimeControl extends Control<ControlProps, ControlState> {
+// Workaround typing problems in @material-ui/pickers@3.2.3
+const AnyPropsKeyboardDateTimepicker: React.FunctionComponent<
+  any
+> = KeyboardDateTimePicker;
+
+export class MaterialDateTimeControl extends Control<
+  ControlProps,
+  ControlState
+> {
   render() {
     const {
       id,
@@ -60,41 +71,39 @@ export class MaterialDateTimeControl extends Control<ControlProps, ControlState>
       data,
       config
     } = this.props;
-    const mergedConfig = merge({}, config, uischema.options);
+    const appliedUiSchemaOptions = merge({}, config, uischema.options);
     const isValid = errors.length === 0;
-    const trim = mergedConfig.trim;
-
-    const getValue = (event: React.FormEvent<HTMLInputElement>) =>
-      (event.target as HTMLInputElement).value;
     const inputProps = {};
 
     return (
       <Hidden xsUp={!visible}>
         <MuiPickersUtilsProvider utils={MomentUtils}>
-          <DateTimePicker
-            keyboard
+          <AnyPropsKeyboardDateTimepicker
             id={id + '-input'}
-            label={computeLabel(isPlainLabel(label) ? label : label.default, required, mergedConfig.hideRequiredAsterisk)}
+            label={computeLabel(
+              isPlainLabel(label) ? label : label.default,
+              required,
+              appliedUiSchemaOptions.hideRequiredAsterisk
+            )}
             error={!isValid}
-            fullWidth={!trim}
+            fullWidth={!appliedUiSchemaOptions.trim}
             onFocus={this.onFocus}
             onBlur={this.onBlur}
             helperText={!isValid ? errors : description}
-            InputLabelProps={{ shrink: true, }}
+            InputLabelProps={{ shrink: true }}
             value={data || null}
-            onChange={datetime => handleChange(path, datetime ? moment(datetime).format() : '')}
-            onInputChange={ev =>
-              handleChange(path, getValue(ev) ? moment(getValue(ev)).format() : '')}
+            onChange={(datetime: any) =>
+              handleChange(path, datetime ? moment(datetime).format() : '')
+            }
             format='MM/DD/YYYY h:mm a'
             clearable={true}
             disabled={!enabled}
-            autoFocus={uischema.options && uischema.options.focus}
+            autoFocus={appliedUiSchemaOptions.focus}
             leftArrowIcon={<KeyboardArrowLeftIcon />}
             rightArrowIcon={<KeyboardArrowRightIcon />}
             dateRangeIcon={<DateRangeIcon />}
             keyboardIcon={<EventIcon />}
             timeIcon={<AccessTimeIcon />}
-            onClear={() => handleChange(path, '')}
             InputProps={inputProps}
           />
         </MuiPickersUtilsProvider>
@@ -103,6 +112,9 @@ export class MaterialDateTimeControl extends Control<ControlProps, ControlState>
   }
 }
 
-export const materialDateTimeControlTester: RankedTester = rankWith(2, isDateTimeControl);
+export const materialDateTimeControlTester: RankedTester = rankWith(
+  2,
+  isDateTimeControl
+);
 
 export default withJsonFormsControlProps(MaterialDateTimeControl);

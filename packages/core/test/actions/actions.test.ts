@@ -22,62 +22,72 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 */
-import { findRefs } from '../../src/util/resolvers';
 import test from 'ava';
+import {
+  Actions,
+  JsonSchema,
+  UISchemaElement,
+  ControlElement,
+  VerticalLayout
+} from '../../src';
 
-test('findRef - does not fail on empty input object ', t => {
-  const refObject = {};
-  t.true(Object.keys(findRefs(refObject)).length === 0);
-});
-
-test('findRef - finds http ref on level 1', t => {
-  const refObject = {
-    type: 'object',
-    properties: {
-      myitem: {
-        $ref: 'http://myref.com/ref'
-      }
-    }
-  };
-  t.true(Object.keys(findRefs(refObject)).length > 0);
-});
-
-test('findRef - finds http ref on root level ', t => {
-  const refObject = {
-    $ref: 'http://myref.com/ref'
-  };
-  t.true(Object.keys(findRefs(refObject)).length > 0);
-});
-
-test('findRef - finds any ref on root level ', t => {
-  const refObject = {
-    $ref: 'xxx'
-  };
-  t.true(Object.keys(findRefs(refObject)).length > 0);
-});
-
-test('findRef - no ref in no ref object ', t => {
-  const refObject = {
+test('Init Action generates schema when not provided', t => {
+  const schema: JsonSchema = {
     type: 'object',
     properties: {
       name: {
-        type: 'string',
-        minLength: 3,
-        description: 'Please enter your name'
-      },
-      vegetarian: {
-        type: 'boolean'
-      },
-      birthDate: {
-        type: 'string',
-        format: 'date',
-        description: 'Please enter your birth date.'
-      },
-      nationality: {
-        type: 'string',
-        enum: ['DE', 'IT', 'JP', 'US', 'RU', 'Other']
+        type: 'string'
+      }
+    },
+    additionalProperties: true,
+    required: ['name']
+  };
+
+  const init = Actions.init({ name: 'foobar' });
+  t.deepEqual(init.schema, schema);
+});
+
+test('Init Action generates ui schema when not provided', t => {
+  const schema: JsonSchema = {
+    type: 'object',
+    properties: {
+      name: {
+        type: 'string'
       }
     }
   };
-  t.true(Object.keys(findRefs(refObject)).length === 0);
+  const uischema: VerticalLayout = {
+    type: 'VerticalLayout',
+    elements: [
+      {
+        type: 'Control',
+        scope: '#/properties/name'
+      } as ControlElement
+    ]
+  };
+
+  const init = Actions.init({}, schema);
+  t.deepEqual(init.uischema, uischema);
+});
+
+test('Init Action generates ui schema when not valid', t => {
+  const schema: JsonSchema = {
+    type: 'object',
+    properties: {
+      name: {
+        type: 'string'
+      }
+    }
+  };
+
+  const init = Actions.init({}, schema, false as any);
+  t.deepEqual(init.uischema, {
+    type: 'VerticalLayout',
+    elements: [
+      {
+        type: 'Control',
+        scope: '#/properties/name'
+      }
+    ]
+  } as UISchemaElement);
 });

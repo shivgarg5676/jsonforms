@@ -22,6 +22,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 */
+import './MatchMediaMock';
 import {
   Actions,
   ControlElement,
@@ -104,19 +105,22 @@ export const initJsonFormsStore = (customData?: any): Store<JsonFormsState> => {
   const s: JsonFormsState = {
     jsonforms: {
       renderers: materialRenderers,
-      cells: materialCells,
+      cells: materialCells
     }
   };
-  const reducer: Reducer<JsonFormsState, AnyAction> = combineReducers({ jsonforms: jsonformsReducer() });
+  const reducer: Reducer<JsonFormsState, AnyAction> = combineReducers({
+    jsonforms: jsonformsReducer()
+  });
   const store: Store<JsonFormsState> = createStore(reducer, s);
   const { data, schema, uischema } = fixture;
-  store.dispatch(Actions.init(customData ? customData : data, schema, uischema));
+  store.dispatch(
+    Actions.init(customData ? customData : data, schema, uischema)
+  );
 
   return store;
 };
 
 describe('Material array control', () => {
-
   let wrapper: ReactWrapper;
 
   afterEach(() => wrapper.unmount());
@@ -126,7 +130,10 @@ describe('Material array control', () => {
     wrapper = mount(
       <Provider store={store}>
         <JsonFormsReduxContext>
-          <MaterialArrayControlRenderer schema={fixture.schema} uischema={fixture.uischema} />
+          <MaterialArrayControlRenderer
+            schema={fixture.schema}
+            uischema={fixture.uischema}
+          />
         </JsonFormsReduxContext>
       </Provider>
     );
@@ -142,7 +149,10 @@ describe('Material array control', () => {
     wrapper = mount(
       <Provider store={store}>
         <JsonFormsReduxContext>
-          <MaterialArrayControlRenderer schema={fixture.schema} uischema={fixture.uischema} />
+          <MaterialArrayControlRenderer
+            schema={fixture.schema}
+            uischema={fixture.uischema}
+          />
         </JsonFormsReduxContext>
       </Provider>
     );
@@ -228,23 +238,28 @@ describe('Material array control', () => {
     wrapper = mount(
       <Provider store={store}>
         <JsonFormsReduxContext>
-          <MaterialArrayControlRenderer schema={fixture.schema} uischema={fixture.uischema} />
+          <MaterialArrayControlRenderer
+            schema={fixture.schema}
+            uischema={fixture.uischema}
+          />
         </JsonFormsReduxContext>
       </Provider>
     );
 
     const buttons = wrapper.find('button');
-    // 5 buttons
+    // 7 buttons
     // add row
+    // clear string
     // delete row
+    // clear string
     // delete row
     // two dialog buttons (no + yes)
     const nrOfRowsBeforeDelete = wrapper.find('tr').length;
 
-    const deleteButton = buttons.at(1);
+    const deleteButton = buttons.at(2);
     deleteButton.simulate('click');
 
-    const confirmButton = buttons.at(4);
+    const confirmButton = buttons.at(6);
     confirmButton.simulate('click');
 
     const nrOfRowsAfterDelete = wrapper.find('tr').length;
@@ -451,6 +466,56 @@ describe('Material array control', () => {
       .find('button')
       .find({ 'aria-label': 'Move up' });
     expect(upButton.is('[disabled]')).toBe(true);
+  });
+
+  it('should have fields enabled', () => {
+    const store = initJsonFormsStore();
+    store.dispatch(
+      Actions.init(fixture2.data, fixture2.schema, fixture2.uischema)
+    );
+    wrapper = mount(
+      <Provider store={store}>
+        <JsonFormsReduxContext>
+          <MaterialArrayControlRenderer
+            schema={fixture2.schema}
+            uischema={fixture2.uischema}
+            enabled={true}
+          />
+        </JsonFormsReduxContext>
+      </Provider>
+    );
+    // first row is header in table
+    const input = wrapper
+      .find('tr')
+      .at(1)
+      .find('input')
+      .first();
+    expect(input.props().disabled).toBe(false);
+  });
+
+  it('should have fields disabled', () => {
+    const store = initJsonFormsStore();
+    store.dispatch(
+      Actions.init(fixture2.data, fixture2.schema, fixture2.uischema)
+    );
+    wrapper = mount(
+      <Provider store={store}>
+        <JsonFormsReduxContext>
+          <MaterialArrayControlRenderer
+            schema={fixture2.schema}
+            uischema={fixture2.uischema}
+            enabled={false}
+          />
+        </JsonFormsReduxContext>
+      </Provider>
+    );
+    // first row is header in table
+    const input = wrapper
+      .find('tr')
+      .at(1)
+      .find('input')
+      .first();
+    expect(input.props().disabled).toBe(true);
   });
 
   it('should have down button disabled for last element', () => {

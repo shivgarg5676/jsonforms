@@ -24,6 +24,7 @@
 */
 import isEqual from 'lodash/isEqual';
 import maxBy from 'lodash/maxBy';
+import memoize from 'lodash/memoize';
 import React, { useLayoutEffect } from 'react';
 import AJV from 'ajv';
 import RefParser from 'json-schema-ref-parser';
@@ -38,13 +39,16 @@ import {
   JsonSchema,
   OwnPropsOfJsonFormsRenderer,
   removeId,
-  UISchemaElement
+  UISchemaElement,
+  JsonFormsCellRendererRegistryEntry,
+  Generate
 } from '@jsonforms/core';
 import {
   ctxToJsonFormsDispatchProps,
   JsonFormsStateProvider,
   useJsonForms
 } from './JsonFormsContext';
+import hash from 'object-hash';
 
 interface JsonFormsRendererState {
   id: string;
@@ -57,12 +61,15 @@ export interface JsonFormsReactProps {
   onChange?(state: Pick<JsonFormsCore, 'data' | 'errors'>): void;
 }
 
-const hasRefs = (schema: JsonSchema): boolean => {
-  if (schema !== undefined) {
-    return Object.keys(findRefs(schema)).length > 0;
-  }
-  return false;
-};
+const hasRefs = memoize(
+  (schema: JsonSchema): boolean => {
+    if (schema !== undefined) {
+      return Object.keys(findRefs(schema)).length > 0;
+    }
+    return false;
+  },
+  (schema: JsonSchema) => (schema ? hash(schema) : false)
+);
 
 export class ResolvedJsonFormsDispatchRenderer extends React.Component<
   JsonFormsProps,
@@ -190,9 +197,10 @@ export const JsonFormsDispatch = React.memo(
 
 export interface JsonFormsInitStateProps {
   data: any;
-  schema: JsonSchema;
-  uischema: UISchemaElement;
+  schema?: JsonSchema;
+  uischema?: UISchemaElement;
   renderers: JsonFormsRendererRegistryEntry[];
+  cells?: JsonFormsCellRendererRegistryEntry[];
   ajv?: AJV.Ajv;
   refParserOptions?: RefParser.Options;
 }
@@ -206,9 +214,13 @@ export const JsonForms = (
     schema,
     uischema,
     renderers,
+    cells,
     refParserOptions,
     onChange
   } = props;
+  const schemaToUse = schema !== undefined ? schema : Generate.jsonSchema(data);
+  const uischemaToUse =
+    typeof uischema === 'object' ? uischema : Generate.uiSchema(schemaToUse);
   return (
     <JsonFormsStateProvider
       initState={{
@@ -216,11 +228,11 @@ export const JsonForms = (
           ajv,
           data,
           refParserOptions,
-          schema,
-          uischema,
-          errors: [] // TODO
+          schema: schemaToUse,
+          uischema: uischemaToUse
         },
-        renderers
+        renderers,
+        cells
       }}
     >
       <JsonFormsDispatch onChange={onChange} />
